@@ -9,6 +9,9 @@ output:
     tufte_features: ["fonts",  "italics"]
 ---
 
+\noindent You can find the R Markdown (RMD) file and the associated datasets in the 
+following GitHub repository: [https://github.com/ChrisGuallpa11/Unpacking-the-Drivers-of-Volatility](https://github.com/ChrisGuallpa11/Unpacking-the-Drivers-of-Volatility)
+
 # Abstract {#Abstract}
 
 \noindent The study aims to investigate the various quantitative factors that may impact 
@@ -19,55 +22,64 @@ regarding their investment strategies.
 \
 \
 
-\noindent To investigate the impact of external factors on a company's stock price 
-volatility, a GARCH(1,1) model was used to model the volatility of the stock
-price. The GARCH model is a statistical approach that assumes volatility is 
-time-varying and is influenced by past shocks. Once a baseline model was developed, 
-external regressors such as economic indicators or relevant financial data was 
-incorporated to capture additional information that may influence volatility. 
-The formula was modified to account for the influence of the external
-regressors. The effectiveness of the external regressors was evaluated by 
-comparing the accuracy of the GARCH model with the added regressors to that of the original 
-GARCH model. If the coefficients of the external regressors were statistically 
-significant, they were considered as possible factors that contribute to 
-volatility. The accuracy of the GARCH model with the added regressors 
-was evaluated by analyzing and comparing their respective average residuals 
-to the actual number. In addition to the primary analysis, an additional test 
-was conducted to validate the effect observed using a linear regression model.
-This test aims to provide further evidence and enhance the reliability of the 
-findings. By employing a linear regression approach, the study seeked to establish
-a quantitative relationship between the identified factors and stock price volatility,
-offering a more rigorous evaluation of the effect's validity. Through this 
-statistical analysis, the study aimed to assess the strength and significance of 
-the observed relationships, providing a robust framework for understanding the 
-impact of the factors on volatility.
+\noindent The analysis portion of the study was accomplished by utilizing a 
+Generalized Auto regressive Conditional Heteroskedasticity (GARCH) model
+and a linear regression model to substantiate the main claim. Through the comprehensive
+statistical analysis, the study endeavor to assess the strength and significance
+of the observed relationships, providing a robust framework for understanding 
+the impact of these factors on volatility. The accuracy of the GARCH model, 
+augmented with additional regressors, was evaluated by comparing the average 
+residuals to the actual values, ensuring a consistent and high level of accuracy.
+In the implementation statistics of the GARCH model, if the coefficients of the 
+external regressors were found to be statistically significant, they were regarded
+as potential factors contributing to volatility. Furthermore, a 
+supplementary test was conducted using a linear regression model to validate the 
+observed effects, providing further evidence and enhancing the reliability of the
+findings. By employing a linear regression approach, the study strived to establish
+a quantitative relationship between the identified factors and stock price 
+volatility, thereby offering a more rigorous evaluation of the effect's validity. 
 \
 \
 
-\noindent By the end, the study sheds light on the impact of external factors on the 
-volatility of a company's stock price. The results demonstrate that inflation, 
+```{r side inflation plots, out.width="140%", fig.margin = TRUE, include=TRUE, echo=FALSE}
+
+knitr::include_graphics("InflationRatePlot.png")
+
+```
+
+
+\noindent By the end, the study shed light on the impact of external factors on the 
+volatility of a company's stock price. The results demonstrated that inflation, 
 interest rate, and unemployment are clear factors that affect the volatility of 
-the stock price. The analysis also suggests that the country's GDP, the company's
-debt-to-equity ratio, and price-to-earnings ratio are additional factors that could
-impact the stock price volatility. Although the study tested a variety of 
-factors, there may be other unexplored factors that could also affect the company's
-volatility. Therefore, further research is necessary to understand the complete 
-picture of the drivers of volatility. 
-\
+the stock price through rigorous analytical techniques (shown on the right). 
+The analysis also suggested that the country's GDP, the company's 
+debt-to-equity ratio, and price-to-earnings ratio are additional factors that 
+could impact the stock price volatility (further research is necessary to confirm
+this). Although the study tested a variety of factors, there may be other unexplored
+factors that could also affect the company's volatility. Therefore, further 
+research is necessary to understand the complete picture of the drivers of volatility. 
+
+```{r side unemployment plots, out.width="140%", fig.margin = TRUE, include=TRUE, echo=FALSE}
+
+knitr::include_graphics("UnemploymentRatePlot.png")
+
+```
+
+```{r side interest plots, out.width="140%", fig.margin = TRUE, include=TRUE, echo=FALSE}
+
+knitr::include_graphics("InterestRatePlot.png")
+
+```
 \
 
 \noindent Investors should exercise caution and recognize that despite the study shedding 
 light on the factors that influence volatility, the stock market remains inherently
-unpredictable. While the study provides valuable insights into potential drivers
-of volatility, it is important to remember that stock prices can be influenced by
+unpredictable. The study provides valuable insights into potential drivers
+of volatility, but it is important to remember that stock prices can be influenced by
 a multitude of unpredictable events, market sentiments, and unforeseen circumstances.
 Therefore, investors should approach their investment decisions with a comprehensive
 understanding of the risks involved, conduct thorough research, and diversify 
-their portfolios to manage uncertainties effectively
-\
-\
-
-**Note: I could perhaps include the inflation rate graph as proof here. However the purpose of the study is to outline possible factors to the change of volatility, so perhaps more graphs can be included here besides the inflation one**
+their portfolios to manage uncertainties effectively.
 
 \newpage
 
@@ -154,15 +166,15 @@ expectations, leading to better investment outcomes over the long run.
 
 \noindent The study of volatility and its underlying factors has been extensively 
 researched and widely discussed, particularly due to the inherent unpredictability
-of the stock market. For instance, in a research paper by David Chi, the impact of
+of the stock market. For instance, in a research paper by Chi, the impact of
 volatility was thoroughly examined using an OLS regression and various robust checks.
 The findings of this study concluded that the unemployment rate significantly 
 influences volatility.
 \
 \
 
-\noindent In another paper by Massomeh Hajilee and Omar M. Al Nasser, a different
-methodology employing Natural logarithm sliding mode control was utilized to 
+\noindent In another paper by Hajilee and Al Nasser (2017), a different
+methodology employing natural logarithm sliding mode control was utilized to 
 investigate the relationship between interest rates and volatility. The results 
 of this study also indicated a significant impact of interest rates on volatility.
 \
@@ -266,8 +278,6 @@ economic data. Yahoo Finance's data is sourced from reputable providers such as
 Morningstar, S&P Global Market Intelligence, and Refinitiv, while FRED's data is
 provided by the Federal Reserve Bank of St. Louis, which is a highly trusted 
 source of economic data.
-\
-\
 
 # 2.2 Data Description {#DataDescription}
 
@@ -513,16 +523,18 @@ is the estimated coefficient of the external regressor.
 
 \noindent It was noteworthy that the models that exhibit statistically significant 
 coefficients for external regressors may not show much improvement, which can be 
-attributed to the considerable capabilities of the GARCH model^[More information can be found at ["Forecasting Volatility Using GARCH Models" written by Francisco Costa](https://core.ac.uk/download/pdf/132797589.pdf)]. It was possible 
+attributed to the considerable capabilities of the GARCH model^[More information can be found at ["Forecasting Volatility Using GARCH Models" Costa (2017)](https://core.ac.uk/download/pdf/132797589.pdf)]. It was possible 
 that the effect of the external regressors was already accounted for by the 
 lagged values of the conditional variance and squared errors in the GARCH model. 
 Nonetheless, for the study, the aim was to identify a few factors that may 
-have an impact on volatility. Therefore, if the coefficients are statistically 
-significant, they were considered as possible factors that contribute to volatility.
-In addition, to evaluate the effectiveness of the external regressors, the
-accuracy of the GARCH model with the added regressors was compared to that 
-of the original GARCH model. This was done by analyzing and comparing their 
-respective average residuals to the actual number.
+have an impact on volatility. Hence, when the coefficients exhibited statistical 
+significance, they were regarded as potential factors influencing volatility. 
+In other words, the significant coefficient ($> 0$) of $x_{t-1}^2$ confirmed the 
+contribution of the external regressor to volatility prediction. In addition, to
+evaluate the effectiveness of the external regressors, the accuracy of the GARCH
+model with the added regressors was compared to that of the original GARCH model.
+This was done by analyzing and comparing their respective average residuals to 
+the actual number.
 
 # 3.2 Pre-Analysis {#PreAnalysis}
 
@@ -649,7 +661,8 @@ having an average of residuals of $-0.00025$
 
 \noindent At this stage, an analysis is presented regarding various factors 
 that have displayed statistical significance in influencing the volatility of 
-each company. 
+each company, meaning the p-values for the constants of the external regressors 
+were statistically significant, with the majority having a p-value of 0.
 
 ```{r inflation test, include=FALSE, echo=FALSE}
 
@@ -673,10 +686,9 @@ mean(resid_google_i)
 # 3.3.1 Inflation Rate {#InflationRate}
 
 \noindent Inflation was identified as one of the factors that has a significant 
-influence on volatility. The p-values of each company confirmed statistical 
-significance. While the formulas changed with the addition of the inflation 
-external factor, where previously significant coefficients may no longer be 
-significant when the coefficient of the external regressor becomes significant, 
+influence on volatility. While the formulas changed with the addition of the 
+inflation external factor, where previously significant coefficients may no longer 
+be significant when the coefficient of the external regressor becomes significant, 
 the accuracies remained consistent, as demonstrated below,
 \
 \
@@ -726,8 +738,11 @@ by about 0.0002794 (or 0.02794%) units. The p-value associated with the coeffici
 was very small (< 2.2e-16), which indicated that the coefficient was statistically 
 significant. The R-squared value of 0.07533 suggested that the model explains only
 a small proportion of the variation in the data, but this was expected given the 
-complexity of financial markets. Overall, the model provided some evidence for a 
-negative relationship between inflation and Apple stock volatility. 
+complexity of financial markets. Overall, although the linear relationship may 
+not be visually apparent, the results of the linear regression test provided 
+sufficient evidence to depict the presence of a linear relationship, which only
+enforced the claim made before using the GARCH model surrounding the negative 
+relationship between inflation and Apple stock volatility. 
 \
 \
 
@@ -774,7 +789,7 @@ mean(resid_google_u)
 # 3.3.2 Unemployment Rate {#UnemploymentRate}
 
 \noindent The unemployment rate emerged as another influential factor, exhibiting
-significant coefficients for both companies. The updated equations, illustrating
+significant coefficients for both companies. The updated equations, illustrating 
 these findings, are presented below.
 \
 \
@@ -816,15 +831,9 @@ and the unemployment rate.
 \
 \
 
-\noindent The results suggested that there was a statistically significant positive relationship
-between the unemployment rate and the volatility of the data. The coefficient 
-estimate for the unemployment rate variable was 2.963e-05, which indicated that
-for each 1% increase in the unemployment rate, the volatility of the data 
-increases by about 0.00002963 (or 0.002963%) units. The p-value associated with
-the coefficient was very small (< 2.2e-16), indicating that the coefficient was 
-statistically significant. The R-squared value of 0.02171 suggestd that the model
-explains only a small proportion of the variation in the data, but this was 
-expected given the complexity of financial markets. Overall, the model provided 
+\noindent The results demonstrated the coefficient estimate for the 
+unemployment rate variable was 2.963e-05, and the p-value associated with
+the coefficient was very small (< 2.2e-16). Therefore, the model provided 
 evidence for a positive relationship between unemployment rate and volatility, 
 suggesting that as the unemployment rate increases, the volatility of the data 
 also tends to increase.
@@ -909,15 +918,9 @@ relationship between the interest rate and the volatility.
 \
 \
 
-\noindent The results suggested that there was a statistically significant positive relationship
-between the interest rate and the volatility of the data. The coefficient estimate
-for the interest rate variable was 2.394e-05, which indicated that for each 1% increase
-in the interest rate, the volatility of the data increases by about 0.00002394 
-(or 0.002394%) units. The p-value associated with the coefficient was very small 
-(7.697e-10), indicating that the coefficient was statistically significant. The 
-R-squared value of 0.009808 suggested that the model explains only a small 
-proportion of the variation in the data, but this was expected given the complexity
-of financial markets. Overall, the model provided evidence for a positive 
+\noindent The coefficient estimate for the interest rate variable was 2.394e-05, 
+and the p-value associated with the coefficient was very small 
+(7.697e-10). Thus, the model provided evidence for a positive 
 relationship between interest rate and volatility, suggesting that as the 
 interest rate increases, the volatility of the data also tends to increase.
 \

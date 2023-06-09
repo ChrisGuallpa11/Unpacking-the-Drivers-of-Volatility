@@ -1,0 +1,1703 @@
+---
+title: "Unpacking the Drivers of Volatility: An Empirical Study"
+author: "Christian Guallpa"
+date: "06-10-2023"
+output:
+  tufte::tufte_handout: default
+  tufte::tufte_html: 
+    
+    tufte_features: ["fonts",  "italics"]
+---
+
+\noindent You can find the R Markdown (RMD) file and the associated data sets in the 
+following GitHub repository: [https://github.com/ChrisGuallpa11/Unpacking-the-Drivers-of-Volatility.](https://github.com/ChrisGuallpa11/Unpacking-the-Drivers-of-Volatility)
+
+# Abstract {#Abstract}
+
+\noindent The study aims to investigate the various quantitative factors that may impact 
+the volatility (often used as a statistical measure to assess the magnitude and 
+frequency of price movements), of the stock market, with a specific focus on two prominent 
+corporations, Apple and Google. In other words, is there a way to improve the 
+accuracy of volatility prediction to enable investors to make more informed 
+decisions with reduced risk? The study is important as understanding stock 
+price volatility can help investors manage risk and make informed decisions 
+regarding their investment strategies. 
+\
+\
+
+\noindent The analysis portion of the study was accomplished by utilizing a 
+Generalized Auto regressive Conditional Heteroskedasticity (GARCH) model
+and a linear regression model to substantiate the main claim. Through the comprehensive
+statistical analysis, the study endeavor to assess the strength and significance
+of the observed relationships, providing a robust framework for understanding 
+the impact of these factors on volatility. The accuracy of the GARCH model, 
+augmented with additional regressors, was evaluated by comparing the average 
+residuals to the actual values, ensuring a consistent and high level of accuracy.
+In the implementation statistics of the GARCH model, if the coefficients of the 
+external regressors were found to be statistically significant, they were regarded
+as potential factors contributing to volatility. Furthermore, a 
+supplementary test was conducted using a linear regression model to validate the 
+observed effects, providing further evidence and enhancing the reliability of the
+findings. By employing a linear regression approach, the study strives to establish
+a quantitative relationship between the identified factors and stock price 
+volatility, thereby offering a more rigorous evaluation of the effect's validity. 
+\
+\
+
+\noindent By the end, the study identified three key factors that, when 
+understood and analyzed, can contribute to more accurate volatility predictions, 
+enabling investors to make safer investment decisions. The rigorous analytical 
+techniques employed in this study have demonstrated the significant impact of 
+inflation rate, interest rate, and unemployment on stock price volatility 
+(as shown on the right, where the highlighted portions depict when recessions
+occurred). Additionally, the analysis suggested that other factors
+such as the country's GDP, the company's debt-to-equity ratio, and price-to-earnings
+ratio may also influence stock price volatility, although further research is 
+needed to confirm their precise effects. By considering and studying these factors,
+investors can gain valuable insights to navigate the market with greater 
+confidence and make more informed investment choices.
+
+```{r side inflation plots, out.width="145%", fig.margin = TRUE, include=TRUE, echo=FALSE}
+
+library(knitr)
+library(kableExtra)
+
+knitr::include_graphics("InflationRatePlot.png")
+
+```
+
+```{r side unemployment plots, out.width="145%", fig.margin = TRUE, include=TRUE, echo=FALSE}
+
+knitr::include_graphics("UnemploymentRatePlot.png")
+
+```
+
+```{r side interest plots, out.width="145%", fig.margin = TRUE, include=TRUE, echo=FALSE}
+
+knitr::include_graphics("InterestRatePlot.png")
+
+```
+\
+
+\noindent Note: Although the study tested a variety of factors, there may be other unexplored
+factors that could also affect the company's volatility. Therefore, further 
+research is necessary to understand the complete picture of the drivers of volatility. 
+\
+\
+
+\noindent The study provides valuable insights into potential drivers
+of volatility, but it is important to remember that stock prices can be influenced by
+a multitude of unpredictable events, market sentiments, and unforeseen circumstances.
+Therefore, investors should approach their investment decisions with a comprehensive
+understanding of the risks involved, conduct thorough research, and diversify 
+their portfolios to manage uncertainties effectively.
+
+\newpage
+
+# Table of Contents
+[Abstract](#Abstract) \hspace{10mm} 1 \
+\
+[1. Introduction](#Introduction) \hspace{10mm} 4 \
+\hspace{10mm}[1.1 Background](#Background) \hspace{10mm} 4 \
+\hspace{10mm}[1.2 Literature Review](#LiteratureReview) \hspace{10mm} 4 \
+\hspace{10mm}[1.3 Purpose](#Purpose) \hspace{10mm} 5 \
+\hspace{10mm}[1.4 Information](#Information) \hspace{10mm} 5 \
+\
+[2. Data Exploration](#DataExploration) \hspace{10mm} 7 \
+\hspace{10mm}[2.1 Data Collection](#DataCollection) \hspace{10mm} 7 \
+\hspace{10mm}[2.2 Data Description](#DataDescription) \hspace{10mm} 7 \
+\hspace{10mm}[2.3 Exploratory Analysis](#ExploratoryAnalysis) \hspace{10mm} 8 \
+\
+[3. Data Analysis](#DataAnalysis) \hspace{10mm} 9 \
+\hspace{10mm}[3.1 Method](#Method) \hspace{10mm} 9 \
+\hspace{10mm}[3.2 Pre-Analysis](#PreAnalysis) \hspace{10mm} 11 \
+\hspace{10mm}[3.3 Analysis](#Analysis) \hspace{10mm} 13 \
+\hspace{10mm}\hspace{10mm}[3.3.1 Macroeconomic Data](#Macroeconomic)\hspace{10mm} 14 \
+\hspace{10mm}[3.4 Observations](#Observations) \hspace{10mm} 18 \
+\hspace{10mm}\hspace{10mm}[3.4.1 Gross Domestic Product](#GDP)\hspace{10mm} 18 \
+\hspace{10mm}\hspace{10mm}[3.4.2 Debt-to-Equity Ratio](#DERatio)\hspace{10mm} 19 \
+\hspace{10mm}\hspace{10mm}[3.4.3 Price-to-Earnings Ratio](#PERatio)\hspace{10mm} 20 \
+\
+[4. Discussion](#Discussion) \hspace{10mm} 22 \
+\hspace{10mm}[4.1 Findings](#Findings) \hspace{10mm} 22 \
+\hspace{10mm}[4.2 Limitations](#Limitations) \hspace{10mm} 22 \
+\
+[5. Conclusion](#Conclusion) \hspace{10mm} 24 \
+\
+[6. References](#References) \hspace{10mm} 25 \
+\
+[7. Appendix](#Appendix) \hspace{10mm} 26 \
+\hspace{10mm}[7.1 Appendix A: Data Dictionary](#DataDictionary) \hspace{10mm} 26 \
+\hspace{10mm}[7.2 Appendix B: Graphical Displays for Google](#GraphicalDisplaysforGoogle) \hspace{10mm} 30
+
+\newpage
+
+# 1. Introduction {#Introduction}
+
+# 1.1 Background {#Background}
+
+\noindent Investing is a difficult task that requires knowledge, experience, and careful 
+decision-making. There are many factors that contribute to the complexity of 
+investing, including the unpredictability of financial markets and the constantly
+changing economic landscape. Investors must also be able to analyze and interpret
+vast amounts of data to identify opportunities and assess risk. Additionally, 
+investing always carries some degree of risk. Even the most well-researched 
+investment can be impacted by unforeseeable events, such as economic downturns, 
+geopolitical unrest, or natural disasters. Investors must accept this risk and 
+be prepared to adapt their strategies accordingly.
+\
+\
+
+\noindent However, one possible way investors can combat these financial risks is by 
+understanding volatility, which is the statistical measure of the degree of 
+variation or fluctuation in the price of a particular stock over a specified period
+of time. By comprehending the level of volatility associated with different assets, 
+investors can assess the risk-reward trade off more effectively. Higher volatility
+assets typically offer the potential for greater returns, but they also come with
+a higher level of risk. Conversely, lower volatility assets tend to be more stable
+but may offer relatively modest returns. By understanding the volatility of various
+investments, investors can align their choices with their risk tolerance, investment
+objectives, and time horizons. This knowledge allows for the construction of 
+well-balanced portfolios that can withstand market fluctuations. Moreover, 
+understanding volatility helps investors to manage their expectations. They can 
+anticipate and mentally prepare for potential price swings, minimizing the impact 
+of short-term market fluctuations on their long-term investment strategy. Additionally,
+understanding volatility allows investors to fine-tune their risk management strategies.
+By diversifying their portfolios across different asset classes with varying levels 
+of volatility, investors can reduce overall risk and potentially enhance returns.
+Overall, a thorough understanding of volatility empowers investors to make more 
+informed decisions, manage their portfolios effectively, and set realistic 
+expectations, leading to better investment outcomes over the long run.
+
+# 1.2 Literature Review {#LiteratureReview}
+
+\noindent The study of volatility and its underlying factors has been extensively 
+researched and widely discussed, particularly due to the inherent unpredictability
+of the stock market. For instance, in a research paper by Chi, the impact of
+volatility was thoroughly examined using an OLS regression and various robust checks.
+The findings of this study concluded that the unemployment rate significantly 
+influences volatility.
+\
+\
+
+\noindent In another paper by Hajilee and Al Nasser (2017), a different
+methodology employing natural logarithm sliding mode control was utilized to 
+investigate the relationship between interest rates and volatility. The results 
+of this study also indicated a significant impact of interest rates on volatility.
+\
+\
+
+\noindent To build upon these existing findings and contribute to the ongoing 
+conversation, I aim to validate these conclusions through an alternative approach.
+Additionally, I intend to explore other potential factors that might influence 
+volatility, thereby providing a more comprehensive understanding of the subject.
+
+# 1.3 Purpose {#Purpose}
+
+\noindent The objective of this study is to validate previous literature 
+findings using a distinct methodology (through the use of the GARCH model and 
+linear regression model). Furthermore, it aims to contribute to the 
+ongoing discourse by examining the correlation between a company's financial 
+performance and the volatility of its stock price. By conducting this analysis, 
+the study intends to expand our understanding of the underlying factors that drives
+volatility and provide valuable insights into the dynamics of the stock market. 
+\
+\
+
+\noindent Therefore, the goal of the study is to validate the notion that a deeper 
+understanding of the driving forces behind volatility can lead to more accurate 
+investment decisions since volatility plays a crucial role in determining the 
+magnitude of fluctuations in stock prices. 
+
+# 1.4 Information {#Information}
+
+\noindent The focus of the study is on two well-known corporations, namely Apple
+and Google. 
+\
+\
+
+\noindent Apple and Google (Alphabet Inc.) are both well-known companies with stocks that 
+have been traded for a significant period of time. Understanding the stock market
+and its volatility can provide context for analyzing the behavior of these stocks.
+\
+\
+
+\noindent Apple Inc. is a multinational technology company renowned for its consumer
+electronics, software, and online services. Founded by Steve Jobs, Steve Wozniak,
+and Ronald Wayne, Apple's stock has been traded for a considerable period. 
+The exact date of Apple's initial public offering (IPO) was December 12, 1980, 
+and it has since become one of the most valuable companies in the world.
+\
+\
+
+\noindent Google, now operating under the parent company Alphabet Inc., is a 
+multinational technology company known for its Internet-related services and 
+products. Founded in September 1998 by Larry Page and Sergey Brin, Google's 
+stock has been traded on the public markets since August 19, 2004. The company 
+had its IPO at a price of $85 per share.
+\
+\
+
+\noindent The stock market, in general, refers to the collection of exchanges
+and markets where buying and selling of stocks and other securities take place. 
+It provides a platform for companies to raise capital and for investors to buy 
+and sell ownership stakes in those companies. 
+\
+\
+
+\noindent While Apple and Google are both prominent technology companies, their 
+stock behavior can differ due to factors such as their business models, 
+industry dynamics, financial performance, and market sentiment. 
+\
+\
+
+\noindent Apple primarily focuses on consumer electronics and software, while 
+Google operates in the internet services and advertising sector. The nature of 
+their businesses can lead to differences in revenue streams, growth opportunities,
+and market dynamics, which can influence their stock performance. 
+\
+\
+
+\noindent Both Apple and Google hold significant market shares in their respective
+industries. However, the competitive landscapes for internet services and consumer
+electronics can vary, leading to differences in investor perceptions and market 
+reactions to news or events affecting each company.
+\
+\
+
+\noindent There are only two distinctions between the two companies that can 
+result in contrasting behavior within the stock market. However, there are many more
+differences between Apple and Google, so concentrating on these significant 
+companies will not impede the precision of the study.
+
+# 2. Data Exploration {#DataExploration}
+
+# 2.1 Data Collection {#DataCollection}
+
+\noindent The data was collected from two primary sources: Yahoo Finance and 
+FRED (Federal Reserve Economic Data). I used Yahoo Finance to gather financial
+data on individual companies (specifically Apple and Google), 
+including stock prices, historical data, and financial statements. To collect 
+the data, I used the search function to find the relevant company or stock, 
+and then I extracted the data from the historical data or financial statements
+section of the website. 
+\
+\
+
+\noindent Note: The data collection process for the study does not raise any 
+privacy concerns, as both companies involved are publicly traded entities and 
+their stock prices are openly available to the public. The study utilizes publicly
+accessible data from Yahoo Finance, ensuring that there are no infringements on 
+privacy rights or confidential information. The use of this data adheres to 
+standard practices for conducting research in the field of financial analysis 
+and does not compromise any sensitive or private data.
+\
+\
+
+\noindent I used FRED to collect economic data on a variety of indicators, including 
+inflation rates, unemployment data, and GDP growth. I used the search function
+to find the relevant economic indicator, and then I accessed the relevant data 
+series.
+\
+\
+
+\noindent Both Yahoo Finance and FRED are considered reliable sources of financial and 
+economic data. Yahoo Finance's data is sourced from reputable providers such as 
+Morningstar, S&P Global Market Intelligence, and Refinitiv, while FRED's data is
+provided by the Federal Reserve Bank of St. Louis, which is a highly trusted 
+source of economic data.
+
+# 2.2 Data Description {#DataDescription}
+
+\noindent The consolidation of data involved the combination of financial 
+statements (income statement, balance sheet, cash flow) for each company. The 
+focus was on specific variables, such as net income, total debt, and stockholder's
+equity. Historical stock price data, including high, low, and volume information, 
+was available for each company starting from January 5, 2006. However, for the 
+volatility analysis, I used the adjusted close stock price. In addition,
+there was access to daily inflation rates and the dollar index, along with other 
+macroeconomic indicators. The GDP and the country's total debt were recorded quarterly,
+while the interest rates and unemployment rates were recorded monthly, both dating
+back to January 01, 2005.^[For definitions and ranges of variables, see the [Appendix 1: Data Dictionary](#Appendix1:DataDictionary)].
+
+```{r setup, include=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+#Packages in Use
+
+library(readr)
+library(tidyr)
+library(gridExtra)
+library(tufte)
+library(tidyverse)
+library(lubridate)
+library(reshape2)
+
+library(ggplot2)
+library(dplyr)
+
+library(tseries)
+library(rugarch)
+library(changepoint)
+library(e1071)
+library(FinTS)
+library(forecast)
+
+```
+
+```{r data sets, include=FALSE, echo=FALSE}
+
+#Data Sets 
+
+volatility = read.csv('Volatility.csv')
+volatility = volatility[c('Date', 'Inflation', 'DollarIndex')]
+
+apple_financials = read.csv('Apple_Financials.csv')
+apple_financials = apple_financials[-c(138:151), ] # Remove NaN
+
+apple_stock = read.csv('Apple_Stock.csv')
+apple_stock = apple_stock[c('Date', 'Adj.Close', 'Volume')]
+apple_stock = right_join(apple_stock, volatility)
+
+apple_stock = apple_stock[-c(0:253), ] # No Information for Inflation and Dollar Index
+apple_stock = apple_stock[apple_stock$Inflation != '.', ] 
+apple_stock = apple_stock[apple_stock$DollarIndex != '.', ] 
+
+apple_returns = diff(log(apple_stock$Adj.Close))
+apple_stock = apple_stock[-1, ]
+apple_stock$LogReturn = apple_returns
+
+google_financials = read.csv('Google_Financials.csv')
+google_financials = google_financials[-c(76, 77, 78), ] # Remove NaN
+
+google_stock = read.csv('Google_Stock.csv')
+google_stock = google_stock[c('Date', 'Adj.Close', 'Volume')]
+google_stock = right_join(google_stock, volatility)
+
+google_stock = google_stock[-c(0:253), ] # No Information for Inflation and Dollar Index
+google_stock = google_stock[google_stock$Inflation != '.', ] 
+google_stock = google_stock[google_stock$DollarIndex != '.', ] 
+
+google_returns = diff(log(google_stock$Adj.Close))
+google_stock = google_stock[-1, ]
+google_stock$LogReturn = google_returns
+
+economics = read.csv('Economics.csv')
+economics = economics[-c(200:364), ]
+
+```
+
+```{r desired financials, include=FALSE, echo=FALSE}
+
+desired_financials = c('StockholdersEquity', 'OrdinarySharesNumber', 'TotalDebt', 'NetIncome')
+
+```
+
+```{r desired stock, include=FALSE, echo=FALSE}
+
+desired_stock = c('Adj.Close', 'Volume', 'Inflation', 'DollarIndex', 'LogReturn')
+
+```
+
+```{r desired economics, include=FALSE, echo=FALSE}
+
+desired_economics = c('InterestRate', 'UnemploymentRate', 'TotalDebt', 'GDP')
+
+```
+
+# 2.3 Exploratory Analysis {#ExploratoryAnalysis}
+
+\noindent To investigate the volatility change of the two companies and its 
+possible underlying factors, it was necessary to observe the relative trends of 
+each company's daily adjusted close stock price before any analysis. 
+\
+\
+
+```{r apple stock, include=FALSE, echo=FALSE}
+
+apple_stock$Date = mdy(apple_stock$Date) #Convert from Character to a Date Variable
+
+apple_stock = apple_stock %>%
+                    mutate_at(c('Inflation', 'DollarIndex'), as.double) #Convert from Character to a Numeric (Double) Variable
+
+```
+
+```{r google stock, include=FALSE, echo=FALSE}
+
+google_stock$Date = mdy(google_stock$Date) #Convert from Character to a Date Variable
+
+google_stock = google_stock %>%
+                    mutate_at(c('Inflation', 'DollarIndex'), as.double) #Convert from Character to a Numeric (Double) Variable
+
+```
+
+```{r apple financials, include=FALSE, echo=FALSE}
+
+apple_financials$Date = mdy(apple_financials$Date) #Convert from Character to Date
+apple_financials[desired_financials] = lapply(apple_financials[desired_financials], gsub, pattern = ",", replacement = "") #Remove Commas for R
+
+apple_financials = apple_financials %>%
+                    mutate_at(desired_financials, as.double) #Convert from Character to a Numeric (Double) Variable
+
+```
+
+```{r google financials, include=FALSE, echo=FALSE}
+
+suppressWarnings({
+
+google_financials$Date = mdy(google_financials$Date) #Convert from Character to a Date Variable
+google_financials[desired_financials] = lapply(google_financials[desired_financials], gsub, pattern = ",", replacement = "") #Remove Commas for R
+
+google_financials = google_financials %>%
+                    mutate_at(desired_financials, as.double) #Convert from Character to a Numeric (Double) Variable
+
+})
+
+```
+
+```{r adjusted price trend apple, out.width="80%", fig.cap="Apple's Stock Price Time Series \\label{AppleStock}", fig.height=3, fig.width=5, fig.align='center', include=TRUE, echo=FALSE}
+
+ggplot(apple_stock, aes(x = Date)) + geom_line(aes(y = Adj.Close), na.rm = TRUE) + geom_rect(aes(xmin = as.Date('2020-01-01'), xmax = as.Date('2020-12-31'), ymin = -Inf, ymax = Inf),
+            fill = 'lightblue', alpha = 0.006) + geom_rect(aes(xmin = as.Date('2007-01-01'), xmax = as.Date('2009-12-31'), ymin = -Inf, ymax = Inf),
+            fill = 'lightblue', alpha = 0.006) + labs(y = 'Adjusted Close Price', title="Apple's Stock") + theme_bw() + theme(plot.title = element_text(hjust = 0.5)) 
+
+```
+
+```{r adjusted price trend google, out.width="80%", fig.cap="Google's Stock Price Time Series \\label{GoogleStock}", fig.height=3, fig.width=5, fig.align='center', include=TRUE, echo=FALSE}
+
+ggplot(google_stock, aes(x = Date)) + geom_line(aes(y = Adj.Close), na.rm = TRUE) + geom_rect(aes(xmin = as.Date('2020-01-01'), xmax = as.Date('2020-12-31'), ymin = -Inf, ymax = Inf),
+            fill = 'lightblue', alpha = 0.006) + geom_rect(aes(xmin = as.Date('2007-01-01'), xmax = as.Date('2009-12-31'), ymin = -Inf, ymax = Inf),
+            fill = 'lightblue', alpha = 0.006) + labs(y = 'Ajusted Close Price', title="Google's Stock") + theme_bw() + theme(plot.title = element_text(hjust = 0.5)) 
+
+```
+
+```{r economics, include=FALSE, echo=FALSE}
+
+economics$Date = mdy(economics$Date) #Convert from character to a date variable
+
+```
+
+\noindent Through an examination of the two graphs, a consistent trend was evident 
+among both companies. Notably, despite the initial impact of the COVID-19 pandemic
+in 2020 on both companies, and of the Great Recession (more significant on 
+Google) from 2007 to 2009 (both recessions are highlighted), both companies 
+experienced a steady increase in their stock prices, with one outperforming the 
+other in certain years. 
+
+# 3. Data Analysis {#DataAnalysis}
+
+# 3.1 Method {#Method}
+
+\noindent For the analysis, the objective was to examine any possible influence 
+of external factors, such as economics indicators, on the volatility of the 
+company's stock price. The initial approach involved modeling the stock price 
+volatility using a GARCH model.
+\
+\
+
+\noindent The GARCH (Generalized Auto regressive Conditional Heteroskedasticity) model is a 
+statistical approach used to analyze and predict the volatility of financial assets. 
+The model assumes that volatility is time-varying and that it is influenced by past shocks.
+The study used the GARCH(1,1) model, which is one of the most commonly used GARCH models. 
+The 1,1 in the model's name refers to the order of the auto regressive and moving 
+average components in the mean equation and the order of the auto regressive 
+component in the variance equation, respectively. As a result GARCH model does have
+two components: the mean equation and the variance equation. The mean equation 
+specifies how the conditional mean of the asset price changes over time, while 
+the variance equation describes how the conditional variance of the asset price 
+changes over time.
+\
+\
+
+\noindent Mean Equation: $r_t = \mu + \epsilon_t$, where $r_t$ is the log return of the 
+asset at time $t$, $\mu$ is the constant mean of the asset returns, and 
+$\epsilon_t$ is the residual or error term, which follows a normal distribution
+with a mean of zero and a constant variance.
+\
+\
+
+\noindent Variance Equation: $\sigma_t^2 = \omega + \alpha\epsilon_{t - 1}^2 + \beta\sigma_{t - 1}^2$,
+where $\sigma_t^2$ is the conditional volatility (referred to as "conditional" 
+because it is estimated based on the past values of the error term and its variance, 
+as well as other information that is available up to that point in time) at time $t$, $\omega$ is the 
+constant $(\geq 0)$ variance of the asset returns, $\alpha$ ($\geq 0$) is the coefficient 
+of the lagged squared residual term $\epsilon_{t-1}^2$, and $\beta$ ($\geq 0$) is the 
+coefficient of the lagged conditional variance term $\sigma_{t-1}^2$.
+\
+\
+
+\noindent The GARCH model's coefficients, $\alpha$ and $\beta$, have distinct interpretations. 
+The $\alpha$ coefficient reflects the magnitude of volatility's response to 
+unexpected returns or shocks, whereas the $\beta$ coefficient reflects the 
+persistence of volatility, or how long it takes to revert back to long-run 
+volatility. Typically, the sum of these coefficients, $(\alpha + \beta)$, is less than one.
+\
+\
+
+\noindent The verification of the two conditions for GARCH, namely volatility clustering 
+and the auto regressive conditional heteroskedasticity (ARCH) effect, was deemed 
+necessary prior to modeling the log returns using a simple GARCH model. Volatility 
+clustering is the tendency for volatility to persist for some time before 
+transitioning to a different regime while the ARCH effect suggests that the 
+volatility of a financial asset or security is not constant but changes over 
+different periods (implies that the past volatility of an asset affects its 
+future volatility). 
+\
+\
+
+\noindent Through this analysis, the estimation of the conditional 
+variance of the asset returns and the ability to forecast future volatility were enabled. 
+Subsequently, the consideration was given to the incorporation of external
+regressors. These regressors could encompass economic indicators or other pertinent
+financial data that may exert an influence on asset volatility. By including these
+external regressors, the intention was to encompass supplementary information that
+has the potential to affect volatility.
+\
+\
+
+\noindent Incorporating the external regressor in the variance equation allowed for the 
+consideration of its influence, leading to the following outcome: 
+\
+\
+
+\noindent Variance Equation: $\sigma_t^2 = \omega + \alpha\epsilon_{t - 1}^2 + \beta\sigma_{t - 1}^2 + \gamma x_{t-1}^2$, 
+where $x_{t-1}$ is the value of the external regressor at time $t-1$, and $\gamma$ 
+is the estimated coefficient of the external regressor.
+\
+\
+
+\noindent It was noteworthy that the models that exhibit statistically significant 
+coefficients for external regressors may not show much improvement, which can be 
+attributed to the considerable capabilities of the GARCH model^[More information can be found at ["Forecasting Volatility Using GARCH Models" Costa (2017)](https://core.ac.uk/download/pdf/132797589.pdf)]. It was possible 
+that the effect of the external regressors was already accounted for by the 
+lagged values of the conditional variance and squared errors in the GARCH model. 
+Nonetheless, for the study, the identification of a few factors that may 
+have an impact on volatility was the aim. Hence, when the coefficients exhibited statistical 
+significance, they were regarded as potential factors influencing volatility. 
+In other words, the significant coefficient ($> 0$) of $x_{t-1}^2$ confirmed the 
+contribution of the external regressor to volatility prediction. In addition, to
+evaluate the effectiveness of the external regressors, the accuracy of the GARCH
+model with the added regressors was compared to that of the original GARCH model.
+I did this by analyzing and comparing their respective average residuals to 
+the actual number.
+
+# 3.2 Pre-Analysis {#PreAnalysis}
+
+\noindent To conduct a preliminary analysis, it was crucial to verify whether 
+the GARCH model fulfills two essential criteria: volatility clustering and the 
+ARCH effect. To ensure the correct application of the GARCH model, I, firstly, generated 
+a plot of the log returns, derived from the computation of the differences
+between the logarithmic adjusted closing stock prices of each company over time. 
+This examination helped ascertain the presence of volatility clustering.
+\
+\
+
+```{r volatility clustering apple, out.width="80%", fig.cap="Apple's Log Return Time Series \\label{AppleClustering}", fig.height=3, fig.width=5, fig.align='center', include=TRUE, echo=FALSE}
+
+ggplot(apple_stock) + geom_line(aes(x = Date, y = LogReturn), na.rm = TRUE)  + labs(title="Apple's Log Return") + theme_bw() + theme(plot.title = element_text(hjust = 0.5)) 
+
+```
+
+```{r volatility clustering google, out.width="80%", fig.cap="Google's Log Return Time Series \\label{GoogleClustering}", fig.height=3, fig.width=5, fig.align='center', include=TRUE, echo=FALSE}
+
+ggplot(google_stock) + geom_line(aes(x = Date, y = LogReturn), na.rm = TRUE)  + labs(title="Google's Log Return") + theme_bw() + theme(plot.title = element_text(hjust = 0.5)) 
+```
+
+\noindent Upon analyzing the graphs, it became evident that the GARCH model 
+met the criterion of volatility clustering. This was evident as significant 
+changes were consistently followed by substantial changes, while minor changes 
+were consistently followed by modest changes as well.
+\
+\
+
+\noindent To investigate the presence of volatility clustering beyond an observation,
+I utilized the autocorrelation function (ACF). The ACF is a statistical and 
+signal processing tool used to measure the correlation between a time series and
+its lagged versions. By analyzing the ACF, I was able to determine whether significant 
+correlations exist between observations at different time points, thus identifying
+any recurring patterns or trends. Here, the ACF graphs for both the 
+log returns of Apple and Google are shown. 
+\
+\
+
+```{r acf plots apple, fig.cap="Apple's ACF Plot \\label{AppleACF}", fig.height=4, fig.width=6, fig.align='center', include=TRUE, echo=FALSE}
+
+acf(apple_stock$LogReturn, main = "Series for Apple")
+
+```
+
+```{r acf plots google, fig.cap="Google's ACF Plot \\label{GoogleCF}", fig.height=4, fig.width=6, fig.align='center', include=TRUE, echo=FALSE}
+
+acf(google_stock$LogReturn, main = "Series for Google")
+
+```
+
+\noindent To assess volatility clustering from the ACF plots, I analyzed 
+them. The ACF plot provides confidence intervals represented by horizontal dashed
+lines. These intervals help determine the statistical significance of autocorrelation
+values at different lags. Autocorrelation values outside these intervals indicate
+a significant correlation. However, in both plots, none of the values crossed the
+horizontal dashed lines, suggesting no statistically significant correlations.
+\
+\
+
+\noindent It was worth noting the presence of an initial peak in both ACF plots. 
+This peak, often called a "spike" or "spike at lag $0$," represents the correlation
+between each observation in the time series and itself (autocorrelation at lag $0$).
+At lag $0$, the autocorrelation is always 1 since each observation perfectly correlates
+with itself. This was an expected result.
+\
+\
+
+\noindent Next, I conducted an examination to assess the fulfillment of the
+ARCH effect condition. 
+
+```{r arch effect, include=TRUE, echo=FALSE}
+
+ArchTest(apple_stock$LogReturn)
+ArchTest(google_stock$LogReturn)
+
+```
+
+\noindent The test results indicated that the p-value for both cases was less than 0.05,
+which confirmed the presence of the ARCH effect.
+
+# 3.3 Analysis {#Analysis}
+
+\noindent Once the prerequisites for modeling the GARCH model were confirmed,
+the subsequent step involved implementing the GARCH model for each company. 
+This allowed for testing whether any external factors exert an influence on 
+the volatility changes^[Graphical displays and outcomes are solely for Apple.
+For Google's graphical displays and outcomes, see the [Appendix 2: Graphical Displays for Google](#Appendix2:GraphicalDisplaysforGoogle)]
+^[The graphical displays also include highlighted sections representing the two significant recessions: Great Recession and COVID Recession. These highlights aim to establish a point of reference between the recessions and the observed relationships].
+\
+\
+
+```{r garch models, include=FALSE, echo=FALSE}
+
+spec = ugarchspec(variance.model = list(garchOrder = c(1, 1)), 
+                  mean.model = list(armaOrder = c(1, 0), include.mean = TRUE))
+
+fit_apple = ugarchfit(spec, data = apple_stock$LogReturn)
+fit_apple
+
+resid_apple = residuals(fit_apple)
+mean(resid_apple)
+
+fit_google = ugarchfit(spec, data = google_stock$LogReturn)
+fit_google
+
+resid_google = residuals(fit_google)
+mean(resid_google)
+
+```
+
+\noindent To begin, by utilizing the "rugarch" library in R and including only the 
+coefficients that are statistically significant at 0.05, I obtained the subsequent 
+equations for each company (without any external factors).
+\
+\
+
+**Apple:**
+
+$\sigma_t^2 = 0.000013 + 0.100249(\epsilon_{t-1}^2) + 0.869840(\sigma_{t-1}^2)$, 
+having an average of residuals of $-0.00081$ 
+\
+\
+
+**Google:**
+
+$\sigma_t^2 = 0.000011 + 0.076529(\epsilon_{t-1}^2) + 0.891138(\sigma_{t-1}^2)$,
+having an average of residuals of $-0.00025$
+\
+\
+
+\noindent At this stage, the study presents an analysis regarding various factors 
+that have displayed statistical significance in influencing the volatility of 
+each company, meaning the p-values for the constants of the external regressors 
+were statistically significant, with the majority having a p-value of 0.
+
+```{r inflation test, include=FALSE, echo=FALSE}
+
+spec_inflation = ugarchspec(variance.model = list(model = "sGARCH", garchOrder = c(1, 1), external.regressors = matrix(apple_stock$Inflation)), 
+                  mean.model = list(armaOrder = c(1, 0), include.mean = TRUE)) #Same Inflation for both Companies
+
+fit_apple_i = ugarchfit(spec_inflation, data = apple_stock$LogReturn)
+fit_apple_i
+
+resid_apple_i = residuals(fit_apple_i)
+mean(resid_apple_i)
+
+fit_google_i = ugarchfit(spec_inflation, data = google_stock$LogReturn)
+fit_google_i
+
+resid_google_i = residuals(fit_google_i)
+mean(resid_google_i)
+
+```
+
+```{r unemployment rate test, include=FALSE, echo=FALSE}
+
+# Cut Data to Align with the Following Variables
+
+apple_stock_e = apple_stock[-c(3842:3966), ] 
+google_stock_e = google_stock[-c(3842:3966), ]
+
+UnemploymentRate = approx(economics$Date, economics$UnemploymentRate, 
+                          xout = apple_stock_e$Date, method = "linear") # Linear Interpolation. with Available Data
+
+spec_unemployment = ugarchspec(variance.model = list(model = "sGARCH", garchOrder = c(1, 1), external.regressors = matrix(UnemploymentRate$y)), 
+                    mean.model = list(armaOrder = c(1, 0), include.mean = TRUE))
+
+fit_apple_u = ugarchfit(spec_unemployment, data = apple_stock_e$LogReturn)
+fit_apple_u
+
+resid_apple_u = residuals(fit_apple_u)
+mean(resid_apple_u)
+coef(fit_apple_u)
+
+fit_google_u = ugarchfit(spec_unemployment, data = google_stock_e$LogReturn)
+fit_google_u
+
+resid_google_u = residuals(fit_google_u)
+mean(resid_google_u)
+
+```
+
+```{r interest rate test, include=FALSE, echo=FALSE}
+
+InterestRate = approx(economics$Date, economics$InterestRate, 
+                      xout = apple_stock_e$Date, method = "linear") # Linear Interpolation. with Available Data
+
+spec_interest = ugarchspec(variance.model = list(model = "sGARCH", garchOrder = c(1, 1), external.regressors = matrix(InterestRate$y)), 
+                    mean.model = list(armaOrder = c(1, 0), include.mean = TRUE))
+
+fit_apple_ir = ugarchfit(spec_interest, data = apple_stock_e$LogReturn)
+fit_apple_ir
+
+resid_apple_ir = residuals(fit_apple_ir)
+mean(resid_apple_ir)
+
+fit_google_ir = ugarchfit(spec_interest, data = google_stock_e$LogReturn)
+fit_google_ir
+
+resid_google_ir = residuals(fit_google_ir)
+mean(resid_google_ir)
+
+```
+
+# 3.3.1 Macroeconomic Indicators {#Macroeconomic}
+
+\noindent The initial phase of the analysis involved integrating external 
+regressors into the GARCH model and examining the statistical significance of 
+the coefficients. The obtained results are presented in the following tables, 
+allowing for a closer evaluation of the findings.
+
+```{r table 1, include=TRUE, echo=FALSE}
+
+data_garch_i = data.frame(Company = c('Apple', 'Google'), "Updated Formulas with Inflation Rate" = c("$\\sigma_t^2 = 0.099359(\\epsilon_{t-1}^2) + 0.870555(\\sigma_{t-1}^2) + 0.000003(x_{t-1}^2)$", "$\\sigma_t^2 = 0.075265(\\epsilon_{t-1}^2) + 0.893809(\\sigma_{t-1}^2) + 0.000004(x_{t-1}^2)$"), "Average Residuals" = c("$-0.00081$", "$-0.00026$"))
+
+knitr::kable(head(data_garch_i), col.names = gsub("[.]", " ", names(data_garch_i)), format="latex", booktabs = TRUE, align = "lccr", escape = FALSE)  %>% kable_styling(latex_options = c("striped", "scale_down", "hold_position"))
+
+data_garch_u = data.frame(Company = c('Apple', 'Google'), "Updated Formulas with Unemployment Rate" = c("$\\sigma_t^2 = 0.102359(\\epsilon_{t-1}^2) + 0.867087(\\sigma_{t-1}^2) + (3.99 \\times 10^{-07})(x_{t-1}^2)$", "$\\sigma_t^2 = 0.077281(\\epsilon_{t-1}^2) + 0.888856(\\sigma_{t-1}^2) + 0.000001(x_{t-1}^2)$"), "Average Residuals" = c("$-0.00085$", "$-0.00026$"))
+
+knitr::kable(head(data_garch_u), col.names = gsub("[.]", " ", names(data_garch_u)), format="latex", booktabs = TRUE, align = "lccr", escape = FALSE)  %>% kable_styling(latex_options = c("striped", "scale_down", "hold_position"))
+
+data_garch_ir = data.frame(Company = c('Apple', 'Google'), "Updated Formulas with Interest Rate" = c("$\\sigma_t^2 = 0.102957(\\epsilon_{t-1}^2) + 0.863345(\\sigma_{t-1}^2) + 0.000001(x_{t-1}^2)$",  "$\\sigma_t^2 = 0.081589(\\epsilon_{t-1}^2) + 0.884310(\\sigma_{t-1}^2) + 0.000001(x_{t-1}^2)$"), "Average Residuals" = c("$-0.00084$",  "$-0.00025$"))
+
+knitr::kable(head(data_garch_ir), col.names = gsub("[.]", " ", names(data_garch_ir)), format="latex", booktabs = TRUE, align = "lccr", escape = FALSE)  %>% kable_styling(latex_options = c("striped", "scale_down", "hold_position"))
+
+```
+\
+
+\noindent The results indicate that all coefficients in the GARCH model were statistically
+significant, suggesting that each variable made a significant contribution to 
+the model (prediction of volatility). To further explore the relationship 
+between volatility, as predicted by the GARCH model, and macroeconomic indicators, 
+the following plots have been provided. These plots for Apple offer insights
+into the trends and patterns observed in the relationship between volatility and 
+the selected macroeconomic variables.
+
+```{r volatility vs inflation rate apple, fig.cap="Relationship between Inflation Rate and the GARCH Model with Inflation Rate as an External Regressor for Apple \\label{InflationRate}", fig.height=4, fig.width=6, fig.align='center', include=TRUE, echo=FALSE}
+
+#Highlight Recessions 
+
+rect_color <- rgb(0, 0.749, 1, alpha = 0.20)
+
+par(mar=c(5, 5, 5, 5))
+plot(apple_stock$Date, fit_apple_i@fit$sigma^2, type = 'l', col="red" , xlab = "Date", ylab = "", main = "Volatility and Inflation Time Series")
+rect(as.Date("2020-01-01"), par("usr")[3], as.Date("2020-12-31"), par("usr")[4], col = rect_color, border = NA)
+rect(as.Date("2007-01-01"), par("usr")[3], as.Date("2009-12-31"), par("usr")[4], col = rect_color, border = NA)
+par(new=TRUE, xpd=TRUE)
+plot(apple_stock$Inflation, type = 'l', col='black', axes = FALSE, xlab = "", ylab = "")
+axis(side = 4, at = pretty(range(apple_stock$Inflation)))     
+mtext("Inflation Rate", side = 4, las = 3, line = 3)
+mtext("Volatility", side = 2, las = 3, line = 3)
+legend("bottomleft", inset=c(0, -0.50), legend=c("Volatility","Inflation Rate"), fill=c("red", "black"), title="Line Color", cex = 0.70)
+
+```
+
+```{r volatility vs unemployment rate apple, fig.cap="Relationship between Unemployment Rate and the GARCH Model with Unemployment Rate as an External Regressor for Apple \\label{UnemploymentRate}", fig.height=4, fig.width=6, fig.align='center', include=TRUE, echo=FALSE}
+
+#Highlight Recessions 
+
+rect_color <- rgb(0, 0.749, 1, alpha = 0.20)
+
+par(mar=c(5, 5, 5, 5))
+plot(apple_stock_e$Date, fit_apple_u@fit$sigma^2, type = 'l', col="red" , xlab = "Date", ylab = "", main = "Volatility and Unemployment Rate Time Series")
+rect(as.Date("2020-01-01"), par("usr")[3], as.Date("2020-12-31"), par("usr")[4], col = rect_color, border = NA)
+rect(as.Date("2007-01-01"), par("usr")[3], as.Date("2009-12-31"), par("usr")[4], col = rect_color, border = NA)
+par(new=TRUE, xpd=TRUE)
+plot(UnemploymentRate$y, type = 'l', col='black', axes = FALSE, xlab = "", ylab = "")
+axis(side = 4, at = pretty(range(UnemploymentRate$y)))
+mtext("Unemployment Rate", side = 4, las = 3, line = 3)
+mtext("Volatility", side = 2, las = 3, line = 3)
+legend("bottomleft", inset=c(0, -0.50), legend=c("Volatility","Unemployment Rate"), fill=c("red", "black"), title="Line Color", cex = 0.70)
+
+```
+
+```{r volatility vs interest rate apple, fig.cap="Relationship between Interest Rate and the GARCH Model with Interest Rate as an External Regressor for Apple \\label{InterestRate}", fig.height=4, fig.width=6, fig.align='center', include=TRUE, echo=FALSE}
+
+#Highlight Recessions 
+
+rect_color <- rgb(0, 0.749, 1, alpha = 0.20)
+
+par(mar=c(5, 5, 5, 5))
+plot(apple_stock_e$Date, fit_apple_ir@fit$sigma^2, type = 'l', col="red" , xlab = "Date", ylab = "", main = "Volatility and Interest Rate Time Series")
+rect(as.Date("2020-01-01"), par("usr")[3], as.Date("2020-12-31"), par("usr")[4], col = rect_color, border = NA)
+rect(as.Date("2007-01-01"), par("usr")[3], as.Date("2009-12-31"), par("usr")[4], col = rect_color, border = NA)
+par(new=TRUE, xpd=TRUE)
+plot(InterestRate$y, type = 'l', col='black', axes = FALSE, xlab = "", ylab = "")
+axis(side = 4, at = pretty(range(InterestRate$y)))     
+mtext("Interest Rate", side = 4, las = 3, line = 3)
+mtext("Volatility", side = 2, las = 3, line = 3)
+legend("bottomleft", inset=c(0, -0.50), legend=c("Volatility","Interest Rate"), fill=c("red", "black"), title="Line Color", cex = 0.70)
+
+```
+
+\newpage
+
+\noindent In order to further investigate and confirm the relationship between volatility 
+and the chosen macroeconomic variable, I also conducted a linear regression analysis.
+The outcomes of this analysis specifically for Apple's case can be observed in 
+the subsequent table.
+
+```{r table 2, include=TRUE, echo=FALSE}
+
+data_test = data.frame("Economic Indicator" = c('Inflation', 'Unemployment Rate', 'Interest Rate'), "Coefficient Estimate" = c("-2.794e-04", "2.963e-05", "2.394e-05"), "P value" = c("2.2e-16", "2.2e-16", "7.697e-10"), "R squared" = c("0.07533", "0.02171", "0.009808"))
+
+knitr::kable(head(data_test), col.names = gsub("[.]", " ", names(data_test)), "latex",  booktabs = TRUE, align = "lccr")  %>% kable_styling(latex_options = c("striped", "hold_position"))
+
+```
+\
+
+\noindent The results presented in the table demonstrate that all three variables
+exhibited statistically significant associations with volatility. To provide a 
+more detailed understanding of the figures, let's focus on the analysis of the 
+inflation rate variable (similar reasoning can be applied to the other two variables)
+and Figure \ref{InflationRate}.
+\
+\
+
+\noindent The estimated coefficient for the inflation variable was -2.794e-04. 
+This value indicates that, for every 1% increase in inflation, the volatility of
+Apple stock returns is expected to decrease by approximately 0.0002794 (or 0.02794%)
+units. The associated p-value for this coefficient was very small (2.2e-16), 
+suggesting that the coefficient is statistically significant, meaning it is 
+unlikely to have occurred by chance.
+\
+\
+
+\noindent It is worth noting that the R-squared value of 0.07533 indicates that 
+the model explains only a small proportion of the variation in the data. This 
+outcome is expected given the inherent complexity of financial markets, where 
+numerous factors contribute to stock volatility.
+\
+\
+
+\noindent To visually examine the linear regression analysis for the three 
+variables, the corresponding plots are displayed below. 
+
+```{r volatility vs inflation regression apple, fig.cap="Linear Relationship between Volatility and Inflation Rate for Apple \\label{Inflation}", fig.height=3, fig.width=5, fig.align='center', include=TRUE, echo=FALSE}
+
+df = data.frame(fit_apple_i@fit$sigma^2, apple_stock$Inflation)
+names(df) = c("volatility", "inflation")
+
+inf_lm = lm(volatility ~ inflation, data = df)
+
+ggplot(df) + geom_point(aes(x = inflation, y = volatility)) + labs(x = "Inflation Rate",y = "Volatility", title = "Volatility vs Inflation Rate") + theme_bw() + theme(plot.title = element_text(hjust = 0.5)) + geom_smooth(formula = y ~ x, aes(x = inflation, y = volatility), method = "glm", se = FALSE, color = 'red')
+
+```
+
+```{r volatility vs unemployment rate regression apple, fig.cap="Linear Relationship between Volatility and Unemployment Rate for Apple \\label{Unemployment}", fig.height=3, fig.width=5, fig.align='center', include=TRUE, echo=FALSE}
+
+df = data.frame(fit_apple_u@fit$sigma^2, UnemploymentRate$y)
+names(df) = c("volatility", "unemployment_rate")
+
+inf_lm = lm(volatility ~ unemployment_rate, data = df)
+
+ggplot(df) + geom_point(aes(x = unemployment_rate, y = volatility)) + labs(x = "Unemployment Rate", y = "Volatility", title = "Volatility vs Unemployment Rate") + theme_bw() + theme(plot.title = element_text(hjust = 0.5)) + geom_smooth(formula = y ~ x, aes(x = unemployment_rate, y = volatility), method = "lm", se = FALSE, color = 'red')
+
+```
+
+```{r volatility vs interest rate regression apple, fig.cap="Linear Relationship between Volatility and Interest Rate for Apple \\label{Interest}", fig.height=3, fig.width=5, fig.align='center', include=TRUE, echo=FALSE}
+
+df = data.frame(fit_apple_ir@fit$sigma^2, InterestRate$y)
+names(df) = c("volatility", "interest_rate")
+
+int_lm = lm(volatility ~ interest_rate, data = df)
+
+ggplot(df) + geom_point(aes(x = interest_rate, y = volatility)) + labs(x = "Interest Rate",y = "Volatility", title = "Volatility vs Interest Rate") + theme_bw() + theme(plot.title = element_text(hjust = 0.5)) + geom_smooth(formula = y ~ x, aes(x = interest_rate, y = volatility), method = "lm", se = FALSE, color = 'red')
+
+```
+
+\newpage
+
+\noindent While the visual representation may not clearly show a linear 
+relationship for all variables (e.g. Figure \ref{Interest}), the results of the linear regression test have 
+provided significant evidence to support the presence of a linear relationship. 
+This finding strengthens the previous claim made using the GARCH model regarding
+the relationship between the variables and volatility.  
+
+# 4.1 Observations {#Observations}
+
+\noindent Despite the numerical analysis demonstrating the impact of various factors on 
+volatility changes, there were additional factors that necessitated further 
+exploration. Consequently, graphical displays are presented to identify 
+any common timeline when volatility experiences sharp declines or spikes and to 
+examine how such changes correlate with the release or variations of other factors.
+
+# 3.4.1 Gross Domestic Product {#GDP}
+
+\noindent To commence, the time series relationship between GDP and volatility 
+is presented below in Figure \ref{GDP}. An intriguing observation emerged, wherein every instance of 
+GDP decline coincides with a pronounced peak in volatility.
+
+```{r gdp observation apple, fig.cap="Relationship between GDP and the GARCH Model with no External Regressor for Apple \\label{GDP}", fig.height=4, fig.width=6, fig.align='center', include=TRUE, echo=FALSE}
+
+economics_g = na.omit(economics)
+
+#Highlight Recessions 
+
+rect_color <- rgb(0, 0.749, 1, alpha = 0.20)
+
+par(mar=c(5, 5, 5, 5))
+plot(apple_stock$Date, fit_apple@fit$sigma^2, type = 'l', col="red" , xlab = "Date", ylab = "", main = "Volatility and GDP Time Series")
+rect(as.Date("2020-01-01"), par("usr")[3], as.Date("2020-12-31"), par("usr")[4], col = rect_color, border = NA)
+rect(as.Date("2007-01-01"), par("usr")[3], as.Date("2009-12-31"), par("usr")[4], col = rect_color, border = NA)
+par(new=TRUE, xpd=TRUE)
+plot(economics_g$Date, economics_g$GDP, col='black', axes = FALSE, xlab = "", ylab = "")
+axis(side = 4, at = pretty(range(economics_g$GDP)))     
+mtext("GDP in Billions", side = 4, las = 3, line = 3)
+mtext("Volatility", side = 2, las = 3, line = 3)
+legend("bottomleft", inset=c(0, -0.50), legend=c("Volatility","GDP"), fill=c("red", "black"), title="Line Color", cex = 0.70)
+
+```
+
+\newpage
+
+\noindent GDP (Gross Domestic Product) is a measure of a country's economic performance 
+and represents the total monetary value of all goods and services produced within
+a country's borders over a specified period. When GDP declines, it may indicate 
+a slowdown in economic activity, which can cause uncertainty and volatility in 
+financial markets. For example, companies may see a decline in revenues and 
+profits, which can lead to a decrease in stock prices. As investors react to 
+these changes, it can cause an increase in volatility in the financial markets. 
+Similarly, when GDP increases, it may signal economic expansion, which can lead 
+to increased investment and confidence, potentially resulting in lower volatility.
+\
+\
+
+\noindent The highlighted portions in Figure \ref{GDP} indicate significant declines 
+that coincide with two important recessions: the Great Recession and the COVID 
+Recession. This observation suggests a potential correlation that warrants 
+further investigation.
+
+# 3.4.2 Debt-to-Equity Ratio {#DERatio}
+
+\noindent Furthermore, the first financial metric to be presented is the 
+debt-to-equity ratio, utilized to evaluate a company's leverage. This ratio is 
+derived by dividing the total debt of a company by its shareholder equity.
+\
+\
+
+\noindent Figure \ref{DE} below demonstrates a clear relationship between
+an increase in the debt-to-equity ratio and an accompanying rise in volatility. 
+It is worth noting that the results may exhibit a slight lag, attributable to the
+quarterly release of financial statements by companies. As a result, the effects 
+may take some time to fully manifest, leading to potential misalignment between 
+the peaks.
+
+```{r debt to equity ratio observation apple, fig.cap="Relationship between Debt-to-Equity and the GARCH Model with no External Regressor for Apple \\label{DE}", fig.height=4, fig.width=6, fig.align='center', include=TRUE, echo=FALSE}
+
+finance = data.frame(apple_financials$Date, apple_financials$TotalDebt / apple_financials$StockholdersEquity)
+names(finance) = c("Date", "DebtEquityRatio")
+finance = na.omit(finance)
+
+#Highlight Recessions 
+
+rect_color <- rgb(0, 0.749, 1, alpha = 0.20)
+
+par(mar=c(5, 5, 5, 5))
+plot(apple_stock$Date, fit_apple@fit$sigma^2, type = 'l', col="red" , xlab = "Date", ylab = "", main = "Volatility and the D/E Ratio Time Series")
+rect(as.Date("2020-01-01"), par("usr")[3], as.Date("2020-12-31"), par("usr")[4], col = rect_color, border = NA)
+rect(as.Date("2007-01-01"), par("usr")[3], as.Date("2009-12-31"), par("usr")[4], col = rect_color, border = NA)
+par(new=TRUE, xpd=TRUE)
+plot(finance$Date, finance$DebtEquityRatio, type = 'l', col='black', axes = FALSE, xlab = "", ylab = "")
+axis(side = 4, at = pretty(range(finance$DebtEquityRatio)))     
+mtext("Debt to Equity Ratio", side = 4, las = 3, line = 3)
+mtext("Volatility", side = 2, las = 3, line = 3)
+legend("bottomleft", inset=c(0, -0.50), legend=c("Volatility","D/E Ratio"), fill=c("red", "black"), title="Line Color", cex = 0.70)
+
+```
+
+\noindent A high debt to equity ratio indicates that a company has taken on more debt than
+it has equity in the business, which means the company is more leveraged. This 
+increases the financial risk for the company since they have to pay interest on 
+their debts and may have trouble meeting those obligations if their earnings 
+decline or they face other financial challenges. A higher debt to equity ratio 
+may lead investors to worry about the company's ability to meet its financial 
+obligations, which could lead to a decline in the stock price, resulting in higher
+volatility. 
+
+# 3.4.3 Price-to-Earnings Ratio {#PERatio}
+
+\noindent A further financial metric under examination is the price-to-earnings 
+(P/E) ratio, which appraises a company's present stock price concerning its 
+earnings per share. The calculation is achieved by dividing the current market 
+price per share of a company's stock (i.e., its current stock price) by its 
+earnings per share, which is determined by dividing the net income by the 
+outstanding share number.
+\
+\
+
+\noindent In contrast to the previous financial metric, the upcoming plot  
+exhibits alignment. This alignment is a result of the calculation incorporating 
+not only the financial statements but also the daily stock price data. By including
+the daily stock price, a more synchronized relationship between the variables can 
+be observed.
+\
+\
+
+\noindent Figure \ref{PE} suggests a positive relationship between
+the release of financial statements by the company and an increase in volatility,
+although it may not be immediately apparent. Notably, when the company's 
+price-to-earnings ratio experiences a substantial increase, there tends to be a 
+corresponding significant rise in volatility. Further exploration is recommended
+to investigate the smaller changes in this relationship.
+\
+\
+
+```{r price to earnings observation apple, fig.cap="Relationship between Price-to-Earnings and the GARCH Model with no External Regressor for Apple \\label{PE}", fig.height=4, fig.width=6, fig.align='center', include=TRUE, echo=FALSE}
+
+linear_shares = approx(apple_financials$Date, apple_financials$OrdinarySharesNumber, 
+                      xout = apple_stock$Date, method = "linear") # Linear Interpolation. with Available Data
+
+linear_income = approx(apple_financials$Date, apple_financials$NetIncome, 
+                      xout = apple_stock$Date, method = "linear") # Linear Interpolation. with Available Data
+
+finance = data.frame(apple_stock$Date, (apple_stock$Adj.Close) / (linear_income$y / linear_shares$y))
+names(finance) = c("Date", "PriceEarningsRatio")
+finance = na.omit(finance)
+
+#Highlight Recessions 
+
+rect_color <- rgb(0, 0.749, 1, alpha = 0.20)
+
+par(mar=c(5, 5, 5, 5))
+plot(apple_stock$Date, fit_apple@fit$sigma^2, type = 'l', col="red" , xlab = "Date", ylab = "", main = "Volatility and the P/E Ratio Time Series")
+rect(as.Date("2020-01-01"), par("usr")[3], as.Date("2020-12-31"), par("usr")[4], col = rect_color, border = NA)
+rect(as.Date("2007-01-01"), par("usr")[3], as.Date("2009-12-31"), par("usr")[4], col = rect_color, border = NA)
+par(new=TRUE, xpd=TRUE)
+plot(finance$Date, finance$PriceEarningsRatio, type = 'l', col='black', axes = FALSE, xlab = "", ylab = "")
+axis(side = 4, at = pretty(range(finance$PriceEarningsRatio)))     
+mtext("Price to Earnings Ratio", side = 4, las = 3, line = 3)
+mtext("Volatility", side = 2, las = 3, line = 3)
+legend("bottomleft", inset=c(0, -0.50), legend=c("Volatility","P/E Ratio"), fill=c("red", "black"), title="Line Color", cex = 0.70)
+
+
+```
+
+\noindent A higher P/E ratio generally suggests that investors are willing to pay more for
+each dollar of the company's earnings. This can reflect investor optimism about 
+the company's growth potential and future earnings. Nonetheless, a higher P/E ratio 
+can also increase the volatility of a company's stock price. This is because a 
+higher P/E ratio indicates that investors have high expectations for the company's
+future performance. If the company's earnings fail to meet these expectations, 
+investors may become disappointed and start selling their shares, causing the 
+stock price to drop. This can lead to increased volatility in the stock price.
+\
+\
+
+\noindent Conversely, a lower P/E ratio generally indicates that investors are less optimistic
+about the company's future performance. While this may result in a more stable 
+stock price, it could also indicate a lack of confidence in the company's 
+long-term prospects.
+
+# 4. Discussion {#Discussion}
+
+# 4.1 Findings {#Findings}
+
+\noindent The empirical study provided compelling evidence of the significant 
+impact of inflation rate, unemployment rate, and interest rate on the volatility
+of a company's stock price. Furthermore, graphical displays revealed the influence
+of the country's GDP, as well as the company's debt-to-equity ratio and 
+price-to-earnings ratio, on stock price volatility.
+\
+\
+
+\noindent In addition to the empirical data, it is logical to understand the reasons why 
+the inflation rate, unemployment rate, and interest rate influence the volatility
+of a company's stock price. 
+\
+\
+
+\noindent Exploring the impact of inflation on volatility is 
+reasonable because inflation can introduce uncertainty and instability into the 
+market, resulting in fluctuations in prices and returns When inflation is high, 
+investors often become more cautious and risk-averse, leading to reduced investment
+levels and heightened volatility.
+\
+\
+
+\noindent The presence of high unemployment rates can contribute to volatility for various 
+reasons. Firstly, it can give rise to social and political unrest, which can 
+subsequently impact the financial markets. Furthermore, elevated unemployment 
+rates tend to reduce consumer spending, resulting in decreased revenues and 
+profits for businesses. This decline in economic activity can cause stock prices 
+to decline, thus contributing to increased volatility within the stock market^[More information can be found at ["Unanticipated Unemployment Rate News on the Stock Market" written by David Chi](https://www.econ.berkeley.edu/sites/default/files/Econ%20honor%20Thesis%20.pdf)]. 
+Given these factors, it is reasonable to assess the potential influence of the 
+unemployment rate on volatility.
+\
+\
+
+\noindent Considering the impact of interest rates on volatility is also logical. Lower 
+interest rates make borrowing money cheaper and more accessible, encouraging 
+increased investment and economic activity. However, this can also elevate the 
+risk of market volatility, as investors may pursue riskier investments in the 
+pursuit of higher returns. Thus, it is reasonable to acknowledge the potential 
+impact of the interest rate on volatility^[More information can be found at ["The Impact of Interest Rate Volatility on Stock Market Development: Evidence from Emerging Markets" written by Massomeh Hajilee and Omar M. Al Nasser Chi](https://www.jstor.org/stable/pdf/26415740.pdf)]. 
+
+# 4.2 Limitations {#Limitations}
+
+\noindent Apart from the findings, it is important to acknowledge the limitations of the study. 
+Like any data source, there are inherent limitations, and it is always advisable 
+for users to conduct their own research and analysis before making economic 
+decisions or drawing conclusions based solely on the data provided.
+\
+\
+
+\noindent One notable limitation was that certain data was unavailable for all 
+time periods. There can be various factors contributing to this issue. For 
+instance, in general, newer companies may have limited historical data compared to 
+well-established companies. Additionally, some companies may choose not to 
+disclose specific financial information due to concerns about privacy or 
+competition. Moreover, gaps or errors in the data collection process can also 
+result in limitations in the available data.
+\
+\
+
+\noindent In fact, during the initial phases in the study, I observed a noticeable 
+pattern of missing data, which could be attributed to factors such as less widespread 
+or comprehensive record-keeping practices in the past, limited technology 
+impeding data collection and analysis, or a lack of interest in collecting or 
+preserving certain types of data. These factors may have influenced the 
+completeness and accuracy of the data utilized in the study. For Apple, during 
+the period of 1985 to 1989, Apple's financial statements had missing data. 
+However, there was only a single entry recorded for each of those years. This 
+suggests the possibility that Apple was not disclosing quarterly data during 
+that time. For Google, similar justification can be provided for the missing data
+in 2003-2004 in Google's financial statements. Just as in the case of Apple, 
+there is a possibility that Google did not release quarterly data during that 
+period, as indicated by the absence of comprehensive financial information for 
+those years. 
+\
+\
+
+\noindent Therefore, future research endeavors should aim to explore and expand
+upon the findings by considering a more comprehensive range of factors, particularly
+delving deeper into the company's financial aspects. 
+\
+\
+
+\noindent Examining the company's finances in greater detail would provide deeper
+insights into the relationship between financial performance and stock price 
+volatility. Factors such as profit margins, cash flow, capital structure, and 
+liquidity could be investigated to understand their potential impact on volatility.
+Analyzing these financial indicators may uncover important patterns and 
+correlations, allowing for a more nuanced understanding of how a company's 
+financial health influences stock price volatility.
+\
+\
+
+\noindent Additionally, in order to enhance the comprehensiveness of future 
+research, it is advisable to incorporate a broader range of companies. The 
+current study focused exclusively on two large companies, which may not adequately
+represent the entire stock market. By including a more diverse set of companies 
+in the analysis, researchers can obtain a more comprehensive understanding of 
+the dynamics and trends within the stock market as a whole. The focus on only the
+two companies with limited yearly information available also made it difficult to 
+thoroughly analyze the impact of total revenue and other financial factors on 
+volatility, such as stock price fluctuations and operating expenses. Consequently,
+further investigation is necessary to explore and understand these relationships 
+more comprehensively.
+\
+\
+
+\noindent Finally, while there may be factors that exhibit a close relationship 
+with other factors, the available data set alone was insufficient to definitively
+conclude this. To establish a strong causal relationship, additional data and 
+rigorous analysis are necessary. This includes obtaining more detailed and 
+granular data, such as sector-specific or industry-specific information, to 
+capture specific dynamics within the economy. Additionally, cross-country data 
+can provide insights into the relationship's consistency across different regions 
+and economies. Furthermore, incorporating complementary qualitative data and 
+employing advanced econometric techniques can help account for confounding factors
+and spurious correlations. By considering a broader range of data sources and 
+employing robust analytical methods, researchers can enhance their understanding 
+of whether these indicators truly have a significant relationship. Thus, based on 
+this comprehensive analysis and understanding, researchers and investors would 
+have the ability to substantiate the study's results.
+
+# 5. Conclusion {#Conclusion}
+
+\noindent In summary, the empirical study uncovered a diverse range of factors 
+that exhibited potential influence on the volatility changes. The findings of 
+the study shed light on several variables that could potentially impact volatility,
+highlighting the intricate dynamics within the market. These factors encompassed
+a broad spectrum, including macroeconomic indicators, company-specific financial
+metrics, and external market conditions.
+\
+\
+
+\noindent In addition to macroeconomic indicators, the study examined the impact
+of company-specific financial metrics on volatility. It found that factors such 
+as debt-to-equity ratio, and price-to-earnings ratio could potentially influence
+volatility. The debt-to-equity ratio, which represents a company's financial leverage,
+was found to have a potential association with volatility. Higher levels of debt 
+relative to equity could amplify market sensitivity and increase volatility. 
+Additionally, variations in the price-to-earnings ratio, reflecting the market's 
+perception of a company's value, were identified as potential contributors to 
+volatility. 
+\
+\
+
+\noindent In summary, the report highlights clear relationships and potential 
+factors associated with volatility. This implies that volatility is not purely 
+random but influenced by underlying drivers. Consequently, investors can analyze
+the presented factors to gain insights into how volatility might behave, allowing
+them to make informed investment decisions accordingly. However, investors should
+approach the results from the report with caution, as stock volatility remains 
+unpredictable. Further research is necessary to obtain a comprehensive understanding
+of how to predict volatility accurately and as a result make more informed 
+investment decisions.
+
+# 6. References {#References}
+
+\noindent Chi, David. Unanticipated unemployment rate news on the stock \
+\hspace{5mm} market. Accessed May 27, 2023. [https://www.econ.berkeley.](https://www.econ.berkeley.edu/sites/default/files/Econ%20honor%20Thesis%20.pdf) \
+\hspace{5mm} [edu/sites/default/files/Econ%20honor%20Thesis%20.pdf.](https://www.econ.berkeley.edu/sites/default/files/Econ%20honor%20Thesis%20.pdf)
+\
+\
+
+\noindent “Federal Reserve Economic Data: Fred: St. Louis Fed.” FRED. \
+\hspace{5mm} Accessed May 27, 2023. https://fred.stlouisfed.org/. 
+\
+\
+
+\noindent Joao Matos Costa, Francisco. Forecasting volatility using GARCH \
+\hspace{5mm} models, 2017. Accessed May 28, 2023. [https://core.ac.uk/](https://core.ac.uk/download/pdf/132797589.pdf) \
+\hspace{5mm} [download/pdf/132797589.pdf.](https://core.ac.uk/download/pdf/132797589.pdf) 
+\
+\
+
+\noindent Massomeh, Hajilee, and Omar&nbsp; M Al Nasser. “The Impact of Interest \
+\hspace{5mm} Rate Volatility on Stock Market Development ...” The Journal \
+\hspace{5mm} of Developing Areas, 2017. [https://www.jstor.org/stable/](https://www.jstor.org/stable/pdf/26415740.pdf) \
+\hspace{5mm} [pdf/26415740.pdf.](https://www.jstor.org/stable/pdf/26415740.pdf)
+\
+\
+
+\noindent “Yahoo Finance - Stock Market Live, Quotes, Business &amp; Finance \
+\hspace{5mm} News.” Yahoo! Finance. Accessed May 27, 2023. [https://](https://finance.yahoo.com) \
+\hspace{5mm} [finance.yahoo.com/.](https://finance.yahoo.com/) 
+
+# 7. Appendix {#Appendix}
+
+# 7.1 Appendix 1: Data Dictionary {#DataDictionary}
+
+# Financial Variables:
+
+\noindent The number of missing values (NA) is shown below. 
+\
+\
+
+**Below are the ranges for each variable and company**
+\
+\
+
+\noindent For the financial data sets, there are approximately 206 different variables, so 
+I will concentrate on the few important ones for the study (more could 
+possibly be examined in the future). 
+\
+\
+
+\noindent Date: When the entries were filed or collected. The date variable ranges from the 
+end of 1986 to the end of 2022 (varies for each company - Apple starts at 1986 and 
+Google starts at 2004).
+\
+\
+
+\noindent Outstanding Share Number: It represents a unit of ownership in a company and 
+typically entitle the shareholder to participate in the profits of the company 
+through dividends and to vote on corporate matters. There is no unit for the 
+numeric (double) variable since it is a total number. 
+\
+\
+
+**The following financial variables are numeric (double) and are measured in dollars**  
+\
+
+\noindent Net Income: A financial metric that represents the amount of profit a company 
+has earned over a specific period of time.
+\
+\
+
+\noindent Total Debt: The sum of all outstanding debt that a company or individual owes to
+creditors, lenders or financial institutions.
+\
+\
+
+\noindent Stockholders Equity: The residual claim on a company's assets after deducting its
+liabilities. It represents the amount of a company's assets that are financed by 
+the owners rather than by creditors
+\
+\
+
+**Apple's Financial Distribution**
+
+```{r apple financials dictionart, include=TRUE, echo=FALSE}
+
+summary(apple_financials[c('Date', desired_financials)])
+
+```
+
+**Google's Financial Distribution**
+
+```{r google financials dictionary, include=TRUE, echo=FALSE}
+
+summary(google_financials[c('Date', desired_financials)])
+
+```
+
+# Stock Variables:  
+
+**Below are the ranges for each variable and company**
+\
+\
+
+\noindent Date: When the entries were filed or collected. The date variable ranges from the 
+beginning of 2006 to the end of 2021.
+\
+\
+
+\noindent Volume: The total number of shares of a stock or other financial asset that have
+been traded during a specific period of time, usually a trading day. The numeric 
+(double) variable is measured as a total quantity. The ranges depends on the 
+company (volume distribution for each company will be shown below).
+\
+\
+
+\noindent Inflation: A market-based measure of the rate at which the general level of 
+prices for goods and services is increasing over time expectations for the next 
+10 years. The numeric (double) variable is measured as a proportion, representing
+the difference between the yield of a nominal 10-year Treasury bond and the 
+yield of a 10-year Treasury inflation-protected security (TIPS).
+\
+\
+
+\noindent Dollar Index: A measure of the value of the U.S. dollar relative to a basket of 
+currencies from major U.S. trading partners. The numeric (double) variable is 
+measured as an index, where changes in the index represent the percentage change
+in the dollar index.
+\
+\
+
+\noindent Log Return: A financial metric that measures the relative change in the price 
+of a security or asset over a specific period of time. It is calculated by 
+taking the natural logarithm of the ratio of the price at the end of the period 
+to the price at the beginning of the period.The numeric (double) variable is 
+unit less as it is defined as the logarithmic difference between two adjusted close prices.
+\
+\
+
+**The following stock variables are numeric (double) and are measured in dollars**
+\
+\
+
+\noindent Adj. Close: The stock price that has been adjusted to reflect any corporate
+actions that may have occurred, such as stock splits, dividends, or spin-offs.
+\
+\
+
+**Apple's Stock Distribution**
+
+```{r apple stock dictionary, include=TRUE, echo=FALSE}
+
+summary(apple_stock[c('Date', desired_stock)])
+
+```
+
+**Google's Stock Distribution**
+
+```{r google stock dictionary, include=TRUE, echo=FALSE}
+
+summary(google_stock[c('Date', desired_stock)])
+
+```
+
+# Economic Variables: 
+
+\noindent The number of missing values (NA) is shown below. 
+\
+\
+
+**Below are the ranges for each variable**
+\
+\
+
+\noindent Date: When the entries were filed or collected. The date variable ranges from the 
+beginning of 2005 to the end of 2021.
+\
+\
+
+\noindent Interest Rate: The rate of cost of borrowing money at which eligible financial 
+institutions can borrow money directly from the Federal Reserve. The numeric 
+(double) variable is measured in a proportion. 
+\
+\
+
+\noindent Unemployment Rate: A measure of the percentage of the labor force that is 
+currently unemployed and actively seeking employment. The numeric (double) variable
+is measured in a proportion. 
+\
+\
+
+\noindent Total Debt: The amount of money owed by the federal government of the United 
+States to creditors. The numeric (double) variable is measured in millions of dollars.
+\
+\
+
+\noindent GDP: (Gross Domestic Product) Economic indicator that measures the total value 
+of all goods and services produced within a country's borders in a specific 
+period, usually a year or a quarter (quarter for the study). The numeric 
+(double) variable is measured in billions of dollars.
+\
+\
+
+```{r economics dictionary, include=TRUE, echo=FALSE}
+
+summary(economics[c('Date', desired_economics)])
+
+```
+
+# 7.2 Appendix 2: Graphical Displays for Google {#GraphicalDisplaysforGoogle}
+
+```{r volatility vs inflation google, fig.cap="Relationship between Inflation Rate and the GARCH Model with Inflation Rate as an External Regressor for Google \\label{InflationRategoogle}", fig.height=4, fig.width=6, fig.align='center', include=TRUE, echo=FALSE}
+
+#Highlight Recessions 
+
+rect_color <- rgb(0, 0.749, 1, alpha = 0.20)
+
+par(mar=c(5, 5, 5, 5))
+plot(google_stock$Date, fit_google_i@fit$sigma^2, type = 'l', col="red" , xlab = "Date", ylab = "", main = "Volatility and Inflation Rate Time Series")
+rect(as.Date("2020-01-01"), par("usr")[3], as.Date("2020-12-31"), par("usr")[4], col = rect_color, border = NA)
+rect(as.Date("2007-01-01"), par("usr")[3], as.Date("2009-12-31"), par("usr")[4], col = rect_color, border = NA)
+par(new=TRUE, xpd=TRUE)
+plot(google_stock$Inflation, type = 'l', col='black', axes = FALSE, xlab = "", ylab = "")
+axis(side = 4, at = pretty(range(google_stock$Inflation)))     
+mtext("Inflation Rate", side = 4, las = 3, line = 3)
+mtext("Volatility", side = 2, las = 3, line = 3)
+legend("bottomleft", inset=c(0, -0.50), legend=c("Volatility","Inflation Rate"), fill=c("red", "black"), title="Line Color", cex = 0.70)
+
+```
+
+\newpage
+
+```{r volatility vs inflation regression google, fig.cap="Linear Relationship between Volatility and Inflation Rate for Google \\label{Inflationgoogle}", fig.height=3, fig.width=5, fig.align='center', include=TRUE, echo=FALSE}
+
+df = data.frame(fit_google_i@fit$sigma^2, google_stock$Inflation)
+names(df) = c("volatility", "inflation")
+
+inf_lm = lm(volatility ~ inflation, data = df)
+summary(inf_lm)
+
+ggplot(df) + geom_point(aes(x = inflation, y = volatility)) + labs(x = "Inflation Rate",y = "Volatility", title = "Volatility vs Inflation Rate") + theme_bw() + theme(plot.title = element_text(hjust = 0.5)) + geom_smooth(formula = y ~ x, aes(x = inflation, y = volatility), method = "lm", se = FALSE, color = 'red')
+
+```
+
+```{r volatility vs unemployment rate google, fig.cap="Relationship between Unemployment Rate and the GARCH Model with Unemployment Rate as an External Regressor for Google \\label{UnemploymentRategoogle}", fig.height=4, fig.width=6, fig.align='center', include=TRUE, echo=FALSE}
+
+#Highlight Recessions 
+
+rect_color <- rgb(0, 0.749, 1, alpha = 0.20)
+
+par(mar=c(5, 5, 5, 5))
+plot(google_stock_e$Date, fit_google_u@fit$sigma^2, type = 'l', col="red" , xlab = "Date", ylab = "", main = "Volatility and Unemployment Rate Time Series")
+rect(as.Date("2020-01-01"), par("usr")[3], as.Date("2020-12-31"), par("usr")[4], col = rect_color, border = NA)
+rect(as.Date("2007-01-01"), par("usr")[3], as.Date("2009-12-31"), par("usr")[4], col = rect_color, border = NA)
+par(new=TRUE, xpd=TRUE)
+plot(UnemploymentRate$y, type = 'l', col='black', axes = FALSE, xlab = "", ylab = "")
+axis(side = 4, at = pretty(range(UnemploymentRate$y)))
+mtext("Unemployment Rate", side = 4, las = 3, line = 3)
+mtext("Volatility", side = 2, las = 3, line = 3)
+legend("bottomleft", inset=c(0, -0.50), legend=c("Volatility","Unemployment Rate"), fill=c("red", "black"), title="Line Color", cex = 0.70)
+
+```
+
+\newpage
+
+```{r volatility vs unemployment rate regression google, fig.cap="Linear Relationship between Volatility and Unemployment Rate for Google \\label{Unemploymentgoogle}", fig.height=3, fig.width=5, fig.align='center', include=TRUE, echo=FALSE}
+
+df = data.frame(fit_google_u@fit$sigma^2, UnemploymentRate$y)
+names(df) = c("volatility", "unemployment_rate")
+
+inf_lm = lm(volatility ~ unemployment_rate, data = df)
+summary(inf_lm)
+
+ggplot(df) + geom_point(aes(x = unemployment_rate, y = volatility)) + labs(x = "Unemployment Rate",y = "Volatility", title = "Volatility vs Unemployment Rate") + theme_bw() + theme(plot.title = element_text(hjust = 0.5)) + geom_smooth(formula = y ~ x, aes(x = unemployment_rate, y = volatility), method = "lm", se = FALSE, color = 'red')
+
+```
+
+```{r volatility vs interest rate google, fig.cap="Relationship between Interest Rate and the GARCH Model with Interest Rate as an External Regressor for Google \\label{InterestRategoogle}", fig.height=4, fig.width=6, fig.align='center', include=TRUE, echo=FALSE}
+
+#Highlight Recessions 
+
+rect_color <- rgb(0, 0.749, 1, alpha = 0.20)
+
+par(mar=c(5, 5, 5, 5))
+plot(google_stock_e$Date, fit_google_ir@fit$sigma^2, type = 'l', col="red" , xlab = "Date", ylab = "", main = "Volatility and Interest Rate Time Series")
+rect(as.Date("2020-01-01"), par("usr")[3], as.Date("2020-12-31"), par("usr")[4], col = rect_color, border = NA)
+rect(as.Date("2007-01-01"), par("usr")[3], as.Date("2009-12-31"), par("usr")[4], col = rect_color, border = NA)
+par(new=TRUE, xpd=TRUE)
+plot(InterestRate$y, type = 'l', col='black', axes = FALSE, xlab = "", ylab = "")
+axis(side = 4, at = pretty(range(InterestRate$y)))     
+mtext("Interest Rate", side = 4, las = 3, line = 3)
+mtext("Volatility", side = 2, las = 3, line = 3)
+legend("bottomleft", inset=c(0, -0.50), legend=c("Volatility","Interest Rate"), fill=c("red", "black"), title="Line Color", cex = 0.70)
+
+```
+
+\newpage
+
+```{r volatility vs interest rate regression google, fig.cap="Linear Relationship between Volatility and Interest Rate for Google \\label{Interestgoogle}", fig.height=3, fig.width=5, fig.align='center', include=TRUE, echo=FALSE}
+
+df = data.frame(fit_google_ir@fit$sigma^2, InterestRate$y)
+names(df) = c("volatility", "interest_rate")
+
+int_lm = lm(volatility ~ interest_rate, data = df)
+summary(int_lm)
+
+ggplot(df) + geom_point(aes(x = interest_rate, y = volatility)) + labs(x = "Interest Rate",y = "Volatility", title = "Volatility vs Interest Rate") + theme_bw() + theme(plot.title = element_text(hjust = 0.5)) + geom_smooth(formula = y ~ x, aes(x = interest_rate, y = volatility), method = "lm", se = FALSE, color = 'red')
+
+```
+
+\newpage
+
+\noindent Although the GARCH model showed a similar relationship between interest 
+rates and volatility for Google as it did for Apple, the results of the linear 
+regression analysis were statistically insignificant. 
+\
+\
+
+\noindent A potential explanation for this disparity in the relationship between interest 
+rates and stock price volatility between Google and Apple could be attributed to 
+differences in their respective product offerings and corresponding consumer 
+demand patterns. Additionally, varying macroeconomic factors such as global 
+economic conditions and geopolitical events may impact each company differently, 
+ultimately influencing their response to fluctuations in interest rates.
+
+```{r gdp observation google, fig.cap="Relationship between GDP and the GARCH Model with no External Regressor for Google \\label{GDPgoogle}", fig.height=4, fig.width=6, fig.align='center', include=TRUE, echo=FALSE}
+
+economics_g = na.omit(economics)
+
+#Highlight Recessions 
+
+rect_color <- rgb(0, 0.749, 1, alpha = 0.20)
+
+par(mar=c(5, 5, 5, 5))
+plot(google_stock$Date, fit_google@fit$sigma^2, type = 'l', col="red" , xlab = "Date", ylab = "", main = "Volatility and GDP Time Series")
+rect(as.Date("2020-01-01"), par("usr")[3], as.Date("2020-12-31"), par("usr")[4], col = rect_color, border = NA)
+rect(as.Date("2007-01-01"), par("usr")[3], as.Date("2009-12-31"), par("usr")[4], col = rect_color, border = NA)
+par(new=TRUE, xpd=TRUE)
+plot(economics_g$Date, economics_g$GDP, col='black', axes = FALSE, xlab = "", ylab = "")
+axis(side = 4, at = pretty(range(economics_g$GDP)))     
+mtext("GDP in Billions", side = 4, las = 3, line = 3)
+mtext("Volatility", side = 2, las = 3, line = 3)
+legend("bottomleft", inset=c(0, -0.50), legend=c("Volatility","GDP"), fill=c("red", "black"), title="Line Color", cex = 0.70)
+
+```
+
+```{r debt to equity ratio observation google, fig.cap="Relationship between Debt-to-Equity and the GARCH Model with no External Regressor for Google \\label{DEgoogle}", fig.height=4, fig.width=6, fig.align='center', include=TRUE, echo=FALSE}
+
+finance = data.frame(google_financials$Date, google_financials$TotalDebt / google_financials$StockholdersEquity)
+names(finance) = c("Date", "DebtEquityRatio")
+
+#Highlight Recessions 
+
+rect_color <- rgb(0, 0.749, 1, alpha = 0.20)
+
+par(mar=c(5, 5, 5, 5))
+plot(google_stock$Date, fit_google@fit$sigma^2, type = 'l', col="red" , xlab = "Date", ylab = "", main = "Volatility and the D/E Ratio Time Series")
+rect(as.Date("2020-01-01"), par("usr")[3], as.Date("2020-12-31"), par("usr")[4], col = rect_color, border = NA)
+rect(as.Date("2007-01-01"), par("usr")[3], as.Date("2009-12-31"), par("usr")[4], col = rect_color, border = NA)
+par(new=TRUE, xpd=TRUE)
+plot(finance$Date, finance$DebtEquityRatio, type = 'l', col='black', axes = FALSE, xlab = "", ylab = "")
+axis(side = 4, at = pretty(range(finance$DebtEquityRatio)))     
+mtext("Debt to Equity Ratio", side = 4, las = 3, line = 3)
+mtext("Volatility", side = 2, las = 3, line = 3)
+legend("bottomleft", inset=c(0, -0.50), legend=c("Volatility","D/E Ratio"), fill=c("red", "black"), title="Line Color", cex = 0.70)
+
+```
+
+\newpage
+
+\noindent It should be noted that the total debt information was not available on Yahoo 
+Finance during the 2007-2009 recession and some time after. This may be attributed 
+to Google's failure to report its total debt amount during that period, or a potential issue
+with gathering historical data.
+
+```{r price to earnings observation google, fig.cap="Relationship between Price-to-Earnings and the GARCH Model with no External Regressor for Google \\label{PEgoogle}", fig.height=4, fig.width=6, fig.align='center', include=TRUE, echo=FALSE}
+
+linear_shares = approx(google_financials$Date, google_financials$OrdinarySharesNumber, 
+                      xout = google_stock$Date, method = "linear") # Linear Interpolation. with Available Data
+
+linear_income = approx(google_financials$Date, google_financials$NetIncome, 
+                      xout = google_stock$Date, method = "linear") # Linear Interpolation. with Available Data
+
+finance = data.frame(google_stock$Date, (google_stock$Adj.Close) / (linear_income$y / linear_shares$y))
+names(finance) = c("Date", "PriceEarningsRatio")
+finance = na.omit(finance)
+finance = filter(finance, PriceEarningsRatio >= 0, PriceEarningsRatio <= 250)
+
+#Highlight Recessions 
+
+rect_color <- rgb(0, 0.749, 1, alpha = 0.20)
+
+par(mar=c(5, 5, 5, 5))
+plot(google_stock$Date, fit_google@fit$sigma^2, type = 'l', col="red" , xlab = "Date", ylab = "", main = "Volatility and the P/E Ratio Time Series")
+rect(as.Date("2020-01-01"), par("usr")[3], as.Date("2020-12-31"), par("usr")[4], col = rect_color, border = NA)
+rect(as.Date("2007-01-01"), par("usr")[3], as.Date("2009-12-31"), par("usr")[4], col = rect_color, border = NA)
+par(new=TRUE, xpd=TRUE)
+plot(finance$Date, finance$PriceEarningsRatio, type = 'l', col='black', axes = FALSE, xlab = "", ylab = "")
+axis(side = 4, at = pretty(range(finance$PriceEarningsRatio)))     
+mtext("Price to Earnings Ratio", side = 4, las = 3, line = 3)
+mtext("Volatility", side = 2, las = 3, line = 3)
+legend("bottomleft", inset=c(0, -0.50), legend=c("Volatility","P/E Ratio"), fill=c("red", "black"), title="Line Color", cex = 0.70)
+
+```
+
+\noindent Although there was little change in the price to earnings ratio when volatility 
+increased substantially during 2020, the general trend is similar to that of 
+Apple. 
+
